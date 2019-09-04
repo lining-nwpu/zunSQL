@@ -171,7 +171,7 @@ public class Shell
 		}
 	}
 	
-	private static void DoSQL(DBInstance dbInstance, String user_command) 
+	public static void DoSQL(DBInstance dbInstance, String user_command) 
 	{
 		// TODO Auto-generated method stub
 		QueryResult result;

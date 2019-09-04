@@ -1,4 +1,4 @@
-package npu.zunsql.shell.test;
+package npu.zunsql.shell;
 
 import java.io.File;  
 import java.io.InputStreamReader;
