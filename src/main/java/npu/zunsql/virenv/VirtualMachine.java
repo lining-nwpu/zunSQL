@@ -10,31 +10,31 @@ import java.util.*;
 //import javax.sound.sampled.Port.Info;
 
 public class VirtualMachine {
-	// 浣滀负杩囨护鍣ㄦ潵瀵硅褰曡繘琛岀瓫閫�
+    //作为过滤器来对记录进行筛选
 	private List<EvalDiscription> filters;
-	// 瀛樺偍琚�夊嚭鐨勫垪
+    //存储被选出的列
 	private List<String> selectedColumns;
-	// 瀛樺偍瑕佹彃鍏ョ殑璁板綍
+    //存储要插入的记录
 	private List<AttrInstance> record;
-	// 瀛樺偍瑕佸垱寤鸿〃鐨勫悇椤硅〃澶达紝璇ユ暟鎹粨鏋勪粎鐢ㄤ簬鍒涘缓琛�
+    //存储要创建表的各项表头，该数据结构仅用于创建表
 	private List<Column> columns;
-	// 瀛樺偍execute鎸囦护鎵ц鍚庣殑鏌ヨ缁撴瀯锛屼粎select鎸囦护瀵瑰簲鐨勬搷浣滀細浣垮緱璇ラ泦鍚堥潪绌�
+    //存储execute指令执行后的查询结构，仅select指令对应的操作会使得该集合非空
 	private QueryResult result;
-	// 瑕佹搷浣滅殑瀵硅薄琛ㄥ悕
+    //要操作的对象表名
 	private String targetTable;
-	// 鍒涘缓琛ㄦ椂涓婚敭鐨勫悕绉板瓨鍌ㄥ湪璇ュ彉閲忎腑
+    //创建表时主键的名称存储在该变量中
 	private String pkName;
-	// 瑕佹洿鏂扮殑灞炴�у悕绉帮紝椤哄簭蹇呴』涓庝笅涓�涓彉閲忕殑椤哄簭涓�鑷�
+    //要更新的属性名称，顺序必须与下一个变量的顺序一致
 	private List<String> updateAttrs;
-	// 瑕佹洿鏂扮殑灞炴�у�硷紝椤哄簭蹇呴』涓庝笂涓�涓彉閲忕殑椤哄簭涓�鑷�
+    //要更新的属性值，顺序必须与上一个变量的顺序一致
 	private List<List<EvalDiscription>> updateValues;
-	// 涓存椂鍙橀噺
+    //临时变量
 	private List<EvalDiscription> singleUpdateValue;
-	// 璁板綍鏈execute灏嗘墽琛岀殑鍛戒护
+    //记录本次execute将执行的命令
 	private Activity activity;
-	// 浣滀负join鎿嶄綔鐨勭粨鏋滈泦
+    //作为join操作的结果集
 	private QueryResult joinResult;
-	// 浜嬪姟鍙ユ焺
+    //事务句柄
 	private Transaction tran;
 	private Transaction usertran;
 
@@ -94,10 +94,10 @@ public class VirtualMachine {
 		String p2 = instruction.p2;
 		String p3 = instruction.p3;
 
-		// 鎵�鏈夋搷浣滈兘鏄欢鏃舵搷浣滐紝鍗冲湪execute鍚庣敓鏁堬紝鍏朵粬鍛戒护鍙細鍚慥M涓～鍏呬俊鎭�
-		// 鐗逛緥鏄痗ommit鎸囦护鍜宺ollback鎸囦护浼氱珛鍗虫墽琛�
+        //所有操作都是延时操作，即在execute后生效，其他命令只会向VM中填充信息
+        //特例是commit指令和rollback指令会立即执行
 		switch (opCode) {
-		// 涓嬮潰鏄叧浜庝簨鍔＄殑澶勭悊浠ｇ爜
+            //下面是关于事务的处理代码
 		case Transaction:
 			ConditonClear();
 			// 濡傛灉杩欓噷涓嶈兘鎻愪緵Transaction鐨勭被鍨嬶紝閭ｄ箞鍙兘鍦╡xecute鐨勬椂鍊欑敱铏氭嫙鏈烘潵鑷姩鎺ㄦ柇
@@ -114,7 +114,7 @@ public class VirtualMachine {
 			try {
 				tran.Commit();
 			} catch (IOException e) {
-				Util.log("鎻愪氦澶辫触");
+				Util.log("提交失败");
 				throw e;
 			}
 			tran = null;
@@ -128,7 +128,7 @@ public class VirtualMachine {
 				}
 				ConditonClear();
 			} catch (IOException e) {
-				Util.log("鎻愪氦澶辫触");
+				Util.log("提交失败");
 				throw e;
 			}
 			break;
@@ -150,7 +150,7 @@ public class VirtualMachine {
 			}
 			break;
 
-		// 涓嬮潰鏄垱寤鸿〃鐨勫鐞嗕唬鐮�
+            //下面是创建表的处理代码
 		case CreateTable:
 			columns.clear();
 			activity = Activity.CreateTable;
@@ -162,60 +162,59 @@ public class VirtualMachine {
 			columns.add(new Column(p1, p2));
 			break;
 
-		case BeginPK:
-			// 鍦ㄥ彧鏀寔涓�涓睘鎬т綔涓轰富閿殑鏉′欢涓嬶紝姝ゆ搷浣滄湰鏃犳剰涔�
-			// 浣嗘寚瀹氫富閿剰鍛崇潃灞炴�т俊鎭緭鍏ュ畬姣曪紝鍥犳灏哻olumnsReadOnly缃负true
-			columnsReadOnly = true;
-			break;
+            case BeginPK:
+                //在只支持一个属性作为主键的条件下，此操作本无意义
+                //但指定主键意味着属性信息输入完毕，因此将columnsReadOnly置为true
+                columnsReadOnly = true;
+                break;
 
-		case AddPK:
-			// 鍦ㄥ彧鏀寔涓�涓睘鎬т綔涓轰富閿殑鏉′欢涓嬶紝鐩存帴瀵筽kName璧嬪�煎嵆鍙�
-			pkName = p1;
-			break;
+            case AddPK:
+                //在只支持一个属性作为主键的条件下，直接对pkName赋值即可
+                pkName = p1;
+                break;
 
-		case EndPK:
-			// 鍦ㄥ彧鏀寔涓�涓睘鎬т綔涓轰富閿殑鏉′欢涓嬶紝姝ゆ搷浣滄棤鎰忎箟
-			// 鏆傛椂灏嗘鍛戒护浣滀负createTable缁撴潫鐨勬爣蹇�
-			break;
+            case EndPK:
+                //在只支持一个属性作为主键的条件下，此操作无意义
+                //暂时将此命令作为createTable结束的标志
+                break;
 
-		// 涓嬮潰鏄垹闄よ〃鐨勬搷浣�
-		case DropTable:
-			activity = Activity.DropTable;
-			targetTable = p3;
-			break;
+            //下面是删除表的操作
+            case DropTable:
+                activity = Activity.DropTable;
+                targetTable = p3;
+                break;
 
-		// 涓嬮潰鏄彃鍏ユ搷浣滐紝杩欐槸涓欢鏃舵搷浣�
-		case Insert:
-			activity = Activity.Insert;
-			targetTable = p3;
-			record.clear();
-			updateValues.clear();
+            //下面是插入操作，这是个延时操作
+            case Insert:
+                activity = Activity.Insert;
+                targetTable = p3;
+                record.clear();
+                updateValues.clear();
+                break;
 
-			break;
+            //下面是删除操作，这是个延时操作
+            case Delete:
+                activity = Activity.Delete;
+                targetTable = p3;
+                break;
 
-		// 涓嬮潰鏄垹闄ゆ搷浣滐紝杩欐槸涓欢鏃舵搷浣�
-		case Delete:
-			activity = Activity.Delete;
-			targetTable = p3;
-			break;
-
-		// 涓嬮潰鏄�夋嫨鎿嶄綔锛岃繖鏄釜寤舵椂鎿嶄綔
+            //下面是选择操作，这是个延时操作
 		case Select:
 			activity = Activity.Select;
 			// targetTable = p3;
 
 			break;
 
-		// 涓嬮潰鏄洿鏂版搷浣滐紝杩欐槸涓欢鏃舵搷浣�
-		case Update:
-			activity = Activity.Update;
-			targetTable = p3;
-			break;
+            //下面是更新操作，这是个延时操作
+            case Update:
+                activity = Activity.Update;
+                targetTable = p3;
+                break;
 
-		// 涓嬮潰鏄叧浜庢彃鍏ヤ竴鏉¤褰曠殑鍐呭鐨勬搷浣�
-		case BeginItem:
-			recordReadOnly = false;
-			break;
+            //下面是关于插入一条记录的内容的操作
+            case BeginItem:
+                recordReadOnly = false;
+                break;
 
 		case AddItemCol:
 			record.add(new AttrInstance(p1, p2, p3));
@@ -224,11 +223,11 @@ public class VirtualMachine {
 			recordReadOnly = true;
 			break;
 
-		// 鍏充簬閫夋嫨鍣ㄧ殑閫夐」锛岃繖閲屽�熷姪琛ㄨ揪寮忓疄鐜帮紝浠呭湪鏈�鍚庡皢璁板綍鐨勮〃杈惧紡浼犵粰filters
-		case BeginFilter:
-			suvReadOnly = false;
-			singleUpdateValue = new ArrayList<>();
-			break;
+            //关于选择器的选项，这里借助表达式实现，仅在最后将记录的表达式传给filters
+            case BeginFilter:
+                suvReadOnly = false;
+                singleUpdateValue = new ArrayList<>();
+                break;
 
 		case EndFilter:
 			filters = singleUpdateValue;
@@ -236,10 +235,10 @@ public class VirtualMachine {
 			suvReadOnly = true;
 			break;
 
-		// 涓嬮潰鏄叧浜巗elect閫夋嫨鐨勫睘鎬х殑璁剧疆
-		case BeginColSelect:
-			selectedColumnsReadOnly = false;
-			break;
+            //下面是关于select选择的属性的设置
+            case BeginColSelect:
+                selectedColumnsReadOnly = false;
+                break;
 
 		case AddColSelect:
 			selectedColumns.add(p1);
@@ -249,9 +248,9 @@ public class VirtualMachine {
 			selectedColumnsReadOnly = true;
 			break;
 
-		// 涓嬮潰鏄鐞嗛�夋嫨鐨勮〃鐨勮繛鎺ユ搷浣滅殑浠ｇ爜
+            //下面是处理选择的表的连接操作的代码
 		case BeginJoin:
-			// 鎺ユ敹鍒癹oin鍛戒护锛屾竻绌轰复鏃惰〃
+                //接收到join命令，清空临时表
 			joinResult = null;
 			isJoin = true;
 			joinIndex = 0;
@@ -262,17 +261,17 @@ public class VirtualMachine {
 
 		case AddTable:
 			targetTable = p1;
-			// 璋冪敤涓嬪眰鏂规硶锛屽姞杞絧1琛紝灏嗚嚜鐒惰繛鎺ョ殑缁撴灉瀛樺叆joinResult
+                //调用下层方法，加载p1表，将自然连接的结果存入joinResult
 			join(targetTable);
 			break;
 
 		case EndJoin:
 			break;
 
-		// 涓嬮潰鐨勪唬鐮佽缃畊pdate瑕佹洿鏂扮殑鍊硷紝褰㈠紡涓篶olName=Expression
-		case Set:
-			updateAttrs.add(p1);
-			break;
+            //下面的代码设置update要更新的值，形式为colName=Expression
+            case Set:
+                updateAttrs.add(p1);
+                break;
 
 		case BeginExpression:
 			// updateValues.clear();
@@ -291,7 +290,7 @@ public class VirtualMachine {
 			suvReadOnly = true;
 			break;
 
-		// 璁板綍Expression鎻忚堪鐨勪唬鐮�
+            //记录Expression描述的代码
 		case Operand:
 			singleUpdateValue.add(new EvalDiscription(opCode, p1, p2));
 			// System.out.println("###singleUpdateValue:"+singleUpdateValue.get(0).cmd+" "+
@@ -306,9 +305,9 @@ public class VirtualMachine {
 			execute();
 			break;
 
-		default:
-			Util.log("娌℃湁杩欐牱鐨勫瓧鑺傜爜: " + opCode + " " + p1 + " " + p2 + " " + p3);
-			break;
+            default:
+                Util.log("没有这样的字节码: " + opCode + " " + p1 + " " + p2 + " " + p3);
+                break;
 
 		}
 	}
@@ -367,12 +366,12 @@ public class VirtualMachine {
 			tran = db.beginWriteTrans();
 		}
 		if (db.dropTable(targetTable, tran) == false) {
-			Util.log("鍒犻櫎琛ㄥけ璐�");
+            Util.log("删除表失败");
 		}
 	}
 
 	private void createTable() throws IOException, ClassNotFoundException {
-		// 闇�瑕佸紑鍚竴涓啓浜嬪姟
+        //需要开启一个写事务
 		if (!isUserTransaction) {
 			tran = db.beginWriteTrans();
 		}
@@ -397,18 +396,18 @@ public class VirtualMachine {
 		// for(int i = 0 ; i < headerName.size();i++)
 		// System.out.println(headerName.get(i));
 		if (db.createTable(targetTable, pkName, headerName, headerType, tran) == null) {
-			Util.log("鍒涘缓琛ㄥけ璐�");
+            Util.log("创建表失败");
 		}
 	}
 
 	/**
-	 * 妫�鏌ュ綋鍓嶈褰曟槸鍚︽弧瓒硍here瀛愬彞鐨勬潯浠�
+     * 检查当前记录是否满足where子句的条件
 	 *
-	 * @param p 褰撳墠琛ㄤ笂鐨勬寚閽�
-	 * @return 婊¤冻鏉′欢杩斿洖true锛屽惁鍒欒繑鍥瀎alse
+     * @param p 当前表上的指针
+     * @return 满足条件返回true，否则返回false
 	 */
 	private boolean check(Cursor p) throws IOException, ClassNotFoundException {
-		// 濡傛灉娌℃湁where瀛愬彞锛岄偅涔堣繑鍥瀟rue锛屽嵆瀵规墍鏈夎褰曢兘鎵ц鎿嶄綔
+        //如果没有where子句，那么返回true，即对所有记录都执行操作
 		if (filters.size() == 0) {
 			return true;
 		}
@@ -421,7 +420,7 @@ public class VirtualMachine {
 			// System.out.println("this should show twice");
 		}
 		if (ans.getType() == BasicType.String) {
-			Util.log("where瀛愬彞鐨勮〃杈惧紡杩斿洖鍊间笉鑳戒负String");
+			Util.log("where子句的表达式返回值不能为String");
 			return false;
 		} else if (Math.abs(Double.valueOf(ans.getValue())) < 1e-10) {
 			return false;
@@ -440,7 +439,7 @@ public class VirtualMachine {
 		UnionOperand ans;
 		ans = eval(filters, Index);
 		if (ans.getType() == BasicType.String) {
-			Util.log("where瀛愬彞鐨勮〃杈惧紡杩斿洖鍊间笉鑳戒负String");
+			Util.log("where子句的表达式返回值不能为String");
 			return false;
 		} else if (Math.abs(Double.valueOf(ans.getValue())) < 1e-10) {
 			return false;
@@ -451,14 +450,14 @@ public class VirtualMachine {
 
 	private void select() throws IOException, ClassNotFoundException {
 
-		// 鏋勯�犵粨鏋滈泦鐨勮〃澶�
-		List<Column> selected = new ArrayList<>();
-		List<String> temp;
-		for (String colName : selectedColumns) {
-			Column col = new Column(colName);
-			selected.add(col);
-		}
-		result = new QueryResult(selected);
+        //构造结果集的表头
+        List<Column> selected = new ArrayList<>();
+        List<String> temp;
+        for (String colName : selectedColumns) {
+            Column col = new Column(colName);
+            selected.add(col);
+        }
+        result = new QueryResult(selected);
 
 		if (isJoin) {
 
@@ -475,7 +474,7 @@ public class VirtualMachine {
 			}
 			temp = joinResult.getHeaderString();
 
-			// 鐢ㄤ簬joinResult鐨勫惊鐜尮閰嶃��
+                //用于joinResult的循环匹配。
 			for (int k = 0; k < joinResult.getRes().size(); k++, joinIndex++) {
 				// 姝ゅ搴旇妫�娴媕oinResult.get(k)鏄惁婊¤冻filter
 				if (check(k)) {
