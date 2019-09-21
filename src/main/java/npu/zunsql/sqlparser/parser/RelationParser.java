@@ -42,6 +42,8 @@ public final class RelationParser {
                 SELECT_CLAUSE, list(expr),
                 fromClause(),
                 whereClause(cond).optional(null),
+                groupByClause(expr, cond).optional(),
+                orderByClause(expr).optional(),
                 Select::new);
     }
 
@@ -52,6 +54,22 @@ public final class RelationParser {
         return relation;
     }
 
+    static Parser<GroupBy> groupByClause(Parser<Expression> expr, Parser<Expression> cond) {
+        return Parsers.sequence(
+            TerminalParser.phrase("group by").next(list(expr)), TerminalParser.phrase("having").next(cond).optional(),
+            GroupBy::new);
+      }
+    
+    static Parser<OrderBy> orderByClause(Parser<Expression> expr) {
+        return TerminalParser.phrase("order by").next(list(orderByItem(expr))).map(OrderBy::new);
+      }
+    
+    static Parser<OrderBy.Item> orderByItem(Parser<Expression> expr) {
+        return Parsers.sequence(
+            expr, Parsers.or(TerminalParser.term("asc").retn(true), TerminalParser.term("desc").retn(false)).optional(true),
+            OrderBy.Item::new);
+      }
+    
     static Parser<Relation> delete(
             Parser<Expression> cond) {
         return DELETE_CLAUSE.next(Parsers.sequence(
