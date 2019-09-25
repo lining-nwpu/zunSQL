@@ -40,6 +40,8 @@ public enum OpCode{
     AddPK,
     EndPK,
 
+    Order,
+    
     Operand,
     Operator,
 
