@@ -522,11 +522,6 @@ public class VirtualMachine {
 			tran = db.beginWriteTrans();
 		}
 
-//        //鍥犱笅灞傛湭鎻愪緵鎺ュ彛锛屾殏鏃舵敞閲婃帀
-//        if(filters.size()==0){
-//            db.getTable(targetTable,tran).clear(tran);
-//        }
-
 		Cursor p = db.getTable(targetTable, tran).createCursor(tran);
 
 		while (!p.isEmpty()) {
@@ -543,7 +538,7 @@ public class VirtualMachine {
 	}
 
 	/**
-	 * 瀵瑰叏琛ㄨ繘琛屾洿鏂�
+	 * 对全表进行更新
 	 */
 	private void update() throws IOException, ClassNotFoundException {
 		if (!isUserTransaction) {
@@ -551,57 +546,23 @@ public class VirtualMachine {
 		}
 		Cursor p = db.getTable(targetTable, tran).createCursor(tran);
 		List<String> header = db.getTable(targetTable, tran).getColumnsName();
-		// for(int i = 0 ; i < header.size() ; i++)
-		// System.out.println("colnumnsname:"+header.get(i));
 		while (p != null) {
 			List<String> row = p.getData();
-			// System.out.println(check(p));
 			if (check(p)) {
-				// System.out.println(updateAttrs.get(0));
-				// System.out.println("updateAttrs.size:"+updateAttrs.size());
 
 				for (int i = 0; i < updateAttrs.size(); i++) {
-					// 鏌ヨ瑕佹洿鏂扮殑灞炴�х殑淇℃伅骞跺垱寤篶ell瀵硅薄鏉ユ墽琛屾洿鏂�
-					// String attrname = record.get(i).attrName;
+					// 查询要更新的属性的信息并创建cell对象来执行更新
 					String attrname = updateAttrs.get(i);
-					// String attrname = "name";
-					// System.out.println("record
-					// name:"+attrname+",updateAttrs.size="+updateAttrs.size());
 					// 寰幆鐨勬柟寮忔槸鍚︽纭�?
-					/*
-					 * for (String info : header) { if (info.equals(attrname)) {
-					 * System.out.println("******"+info); row.set(i, eval(updateValues.get(i),
-					 * p).getValue());
-					 * System.out.println("set value:"+i+" "+eval(updateValues.get(i),
-					 * p).getValue()); } }
-					 */
-					// System.out.println("##################");
-					/*
-					 * for(int l = 0 ; l < updateValues.size() ;l++) { for(int k = 0 ; k <
-					 * updateValues.size();k++) {
-					 * 
-					 * System.out.println(updateValues.get(l).get(k)); } }
-					 */
-					// System.out.println("##################");
-					// ;
 					for (int j = 0; j < header.size(); j++) {
 
 						if (header.get(j).equals(attrname)) {
-							// System.out.println("####"+header.get(j));
 							row.set(j, eval(updateValues.get(i), p).getValue());
-							// System.out.println("set value:"+j+" "+updateValues.get(i).get(0).cmd);
-							// for(int ii =0 ; ii < updateValues.get(0).size() ; ii++){
-							// System.out.println("updataValue:"+updateValues.get(0).get(ii).cmd+"
-							// "+updateValues.get(0).get(ii).col_name
-							// +" "+updateValues.get(0).get(ii).constant);
-							// }
 						}
 					}
 				}
 			}
 			if (p.setData(tran, row)) {
-				// for(String info:row)
-				// System.out.println("row information: "+info);
 				result.addAffectedCount();
 			}
 			if (false == p.moveToNext(tran)) {
@@ -611,7 +572,8 @@ public class VirtualMachine {
 	}
 
 	/**
-	 * 灏嗕竴鏉¤褰曟彃鍏ュ埌琛ㄤ腑 鍥犱负涓婂眰娌℃湁浜х敓default锛屼笅灞備篃鏈彁渚涙帴鍙ｏ紝鍥犳杩欓噷姣忔鍙兘鎻掑叆涓�鏉″畬鏁寸殑璁板綍
+	 * 将一条记录插入到表中
+	 * 因为上层没有产生default，下层也未提供接口，因此这里每次只能插入一条完整的记录
 	 */
 	private void insert() throws IOException, ClassNotFoundException {
 		if (!isUserTransaction) {
@@ -629,10 +591,10 @@ public class VirtualMachine {
 	}
 
 	/**
-	 * 纭畾涓�涓瓧绗︿覆鍊肩殑鏈�灏忓彲鎵胯浇绫诲瀷
+	 * 确定一个字符串值的最小可承载类型
 	 *
-	 * @param strVal 瑕佸垽鏂殑鍊�
-	 * @return 鏈�灏忕殑鍙壙杞界被鍨�
+	 * @param strVal 要判断的值
+	 * @return 最小的可承载类型
 	 */
 	private static BasicType lowestType(String strVal) {
 		int dot = 0;
@@ -656,10 +618,10 @@ public class VirtualMachine {
 	}
 
 	/**
-	 * 鏍规嵁琛ㄨ揪寮忕殑鎻忚堪姹傚��
+	 * 根据表达式的描述求值
 	 *
-	 * @param evalDiscriptions 瑕佽绠楃殑琛ㄨ揪寮忔弿杩�
-	 * @param p                璁＄畻鏃堕渶瑕佷緷璧栫殑鏁版嵁鐨勬寚閽�
+	 * @param evalDiscriptions 要计算的表达式描述
+	 * @param p                计算时需要依赖的数据的指针
 	 */
 	private UnionOperand eval(List<EvalDiscription> evalDiscriptions, Cursor p)
 			throws IOException, ClassNotFoundException {
@@ -689,7 +651,7 @@ public class VirtualMachine {
 	}
 
 	/**
-	 * eval鐨勯噸杞斤紝鍦ㄤ笅灞備笉鎻愪緵瑙嗗浘鏈哄埗鐨勬椂鍊欑敤浜庡鐞嗕复鏃惰〃銆�
+	 * eval的重载，在下层不提供视图机制的时候用于处理临时表。
 	 */
 	private UnionOperand eval(List<EvalDiscription> evalDiscriptions, int Index) {
 		Expression exp = new Expression();
@@ -701,11 +663,8 @@ public class VirtualMachine {
 
 					for (int j = 0; j < infoJoin.size(); j++) {
 						if (infoJoin.get(j).equals(evalDiscriptions.get(i).col_name)) {
-							// System.out.println(joinResult.getRes().get(Index).get(j));
 							exp.addOperand(new UnionOperand(joinResult.getHeader().get(j).getColumnTypeBasic(),
 									joinResult.getRes().get(Index).get(j)));
-							// exp.addOperand(new UnionOperand(BasicType.String,
-							// joinResult.getRes().get(Index).get(j)));
 						}
 					}
 
@@ -747,10 +706,6 @@ public class VirtualMachine {
 			return;
 		}
 
-		// List<List<String>> resList = joinResult.getRes();
-		// List<Column> resHead = joinResult.getHeader();
-		// JoinMatch matchedJoin = checkUnion(resHead, fromTreeHead);
-		// QueryResult copy = new QueryResult(matchedJoin.getJoinHead());
 		// 寰楀埌join缁撴灉鐨勫ご锛屽嵆鍒楄〃鍚�
 		List<Column> joinHead = joinResult.getHeader();
 		int snglJoin = joinResult.getHeader().size();
@@ -764,14 +719,11 @@ public class VirtualMachine {
 		QueryResult joinRes = new QueryResult(joinHead);
 
 		for (int ndx1 = 0; ndx1 < joinResult.getRes().size(); ++ndx1) {
-			// for(int ndx2=0; ndx2<table.getColumnsName().size(); ++ndx2){
 			while (cursor != null) {
 				List<String> snglRecord = new ArrayList<>();
-//				System.out.println(joinResult.getRes().get(ndx1));
 				for (int arri = 0; arri < joinResult.getRes().get(ndx1).size(); ++arri) {
 					snglRecord.add(joinResult.getRes().get(ndx1).get(arri));
 				}
-				// joinResult.getRes().get(ndx1).forEach(n -> snglRecord.add(n));
 				for (int ndx3 = 0; ndx3 < cursor.getData().size(); ++ndx3) {
 					snglRecord.add(cursor.getData().get(ndx3));
 				}
@@ -781,7 +733,6 @@ public class VirtualMachine {
 				}
 			}
 			cursor = db.getTable(tableName, tran).createCursor(tran);
-			// }
 		}
 		joinResult = joinRes;
 	}
@@ -808,7 +759,7 @@ public class VirtualMachine {
 		return new JoinMatch(unionHead, unionUnder);
 	}
 
-	// 杩欎釜鏂规硶鍙敤浜庢祴璇曡嚜鐒惰繛鎺ユ搷浣溿��
+	// 这个方法只用于测试自然连接操作。
 	public QueryResult forTestJoin(JoinMatch joinMatch, QueryResult input1, QueryResult input2) {
 		int matchCount = 0;
 		QueryResult copy = new QueryResult(joinMatch.getJoinHead());
