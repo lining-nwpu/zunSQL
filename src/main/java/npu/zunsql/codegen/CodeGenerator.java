@@ -73,6 +73,11 @@ public class CodeGenerator {
                     ret.add(new Instruction(OpCode.EndColSelect, null, null, null));
                     Expression where = ((Select) statement).where;
                     ret.addAll(WhereToInstruction(where));
+                    
+                    // Ã·»°Orderby
+                    OrderBy order_by = ((Select) statement).orderBy;
+                    ret.addAll(orderBy2Instruction(order_by));
+                    
                     break TYPE_SWITCH;
                 }
                 if (statement instanceof Insert) {
@@ -152,6 +157,20 @@ public class CodeGenerator {
         return ret;
     }
 
+    private static List<Instruction> orderBy2Instruction(OrderBy order_by)
+    {
+    	List<Instruction> ret = new ArrayList<>();
+ 
+    	if (order_by != null)
+    	{
+    		for (OrderBy.Item item : order_by.items)
+    		{
+        		ret.add(new Instruction(OpCode.Order, item.by.toString(), null, null));
+    		}
+    	}
+    	return ret;
+    }
+    
     private static List<Instruction> WhereToInstruction(Expression where) {
         List<Instruction> ret = new ArrayList<>();
         if (where != null) {
