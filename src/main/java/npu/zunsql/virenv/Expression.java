@@ -36,6 +36,14 @@ public class Expression {
         else{
             UnionOperand a=operands.pop();
             UnionOperand b=operands.pop();
+            
+            // 如果两个操作“与”中存在有NULL的情况，说明之前的表中存在空，结果直接不正确，不用填入
+            if (a == null || b == null)
+            {
+            	operands.push(new UnionOperand(BasicType.Integer, "0"));
+            	return;
+            }
+            
             switch (op){
                 case EQ:
                     operands.push(new UnionOperand(BasicType.Integer,EQ(a,b).toString()));
@@ -138,7 +146,7 @@ public class Expression {
             }
         }
         else{
-            //int和double都可以使用double类型来比较大小
+            //int鍜宒ouble閮藉彲浠ヤ娇鐢╠ouble绫诲瀷鏉ユ瘮杈冨ぇ灏�
             Double x=Double.valueOf(obj.getKey().getValue());
             Double y=Double.valueOf(obj.getValue().getValue());
             if(y>=x){
@@ -160,7 +168,7 @@ public class Expression {
             }
         }
         else{
-            //int和double都可以使用double类型来比较大小
+            //int鍜宒ouble閮藉彲浠ヤ娇鐢╠ouble绫诲瀷鏉ユ瘮杈冨ぇ灏�
             Double x=Double.valueOf(obj.getKey().getValue());
             Double y=Double.valueOf(obj.getValue().getValue());
             if(y>x){
@@ -182,7 +190,7 @@ public class Expression {
             }
         }
         else{
-            //int和double都可以使用double类型来比较大小
+            //int鍜宒ouble閮藉彲浠ヤ娇鐢╠ouble绫诲瀷鏉ユ瘮杈冨ぇ灏�
             Double x=Double.valueOf(obj.getKey().getValue());
             Double y=Double.valueOf(obj.getValue().getValue());
             if(y<=x){
@@ -204,7 +212,7 @@ public class Expression {
             }
         }
         else{
-            //int和double都可以使用double类型来比较大小
+            //int鍜宒ouble閮藉彲浠ヤ娇鐢╠ouble绫诲瀷鏉ユ瘮杈冨ぇ灏�
             Double x=Double.valueOf(obj.getKey().getValue());
             Double y=Double.valueOf(obj.getValue().getValue());
             if(y<x){
@@ -221,7 +229,7 @@ public class Expression {
             return new Pair<>(obj.getKey().getValue().concat(obj.getValue().getValue()),null);
         }
         else{
-            //int和double都可以使用double类型来计算
+            //int鍜宒ouble閮藉彲浠ヤ娇鐢╠ouble绫诲瀷鏉ヨ绠�
             Double x=Double.valueOf(obj.getKey().getValue());
             Double y=Double.valueOf(obj.getValue().getValue());
             return new Pair<>(null,x+y);
@@ -230,11 +238,11 @@ public class Expression {
     Double Sub(UnionOperand a,UnionOperand b){
         Pair<UnionOperand,UnionOperand> obj=typeCast(new Pair<>(a,b));
         if(obj.getKey().getType()==BasicType.String){
-            Util.log("字符串不能做减法！");
+            Util.log("瀛楃涓蹭笉鑳藉仛鍑忔硶锛�");
             return 0.0;
         }
         else{
-            //int和double都可以使用double类型来计算
+            //int鍜宒ouble閮藉彲浠ヤ娇鐢╠ouble绫诲瀷鏉ヨ绠�
             Double x=Double.valueOf(obj.getKey().getValue());
             Double y=Double.valueOf(obj.getValue().getValue());
             return y-x;
@@ -243,11 +251,11 @@ public class Expression {
     Double Mul(UnionOperand a,UnionOperand b){
         Pair<UnionOperand,UnionOperand> obj=typeCast(new Pair<>(a,b));
         if(obj.getKey().getType()==BasicType.String){
-            Util.log("字符串不能做乘法！");
+            Util.log("瀛楃涓蹭笉鑳藉仛涔樻硶锛�");
             return 0.0;
         }
         else{
-            //int和double都可以使用double类型来计算
+            //int鍜宒ouble閮藉彲浠ヤ娇鐢╠ouble绫诲瀷鏉ヨ绠�
             Double x=Double.valueOf(obj.getKey().getValue());
             Double y=Double.valueOf(obj.getValue().getValue());
             return x*y;
@@ -256,15 +264,15 @@ public class Expression {
     Double Div(UnionOperand a,UnionOperand b){
         Pair<UnionOperand,UnionOperand> obj=typeCast(new Pair<>(a,b));
         if(obj.getKey().getType()==BasicType.String){
-            Util.log("字符串不能做除法！");
+            Util.log("瀛楃涓蹭笉鑳藉仛闄ゆ硶锛�");
             return 0.0;
         }
         else{
-            //int和double都可以使用double类型来计算
+            //int鍜宒ouble閮藉彲浠ヤ娇鐢╠ouble绫诲瀷鏉ヨ绠�
             Double x=Double.valueOf(obj.getKey().getValue());
             Double y=Double.valueOf(obj.getValue().getValue());
             if(Math.abs(y)<1e-10){
-                Util.log("除数不能为0");
+                Util.log("闄ゆ暟涓嶈兘涓�0");
                 return 0.0;
             }
             if(obj.getKey().getType() == BasicType.Integer &&
@@ -289,7 +297,7 @@ public class Expression {
             throw e;
         }
         finally {
-            //没什么可做的
+            //娌′粈涔堝彲鍋氱殑
         }
 
     }
@@ -308,7 +316,7 @@ public class Expression {
             throw e;
         }
         finally {
-            //没什么可做的
+            //娌′粈涔堝彲鍋氱殑
         }
 
     }
@@ -321,7 +329,7 @@ public class Expression {
             throw e;
         }
         finally {
-            //没什么可做的
+            //娌′粈涔堝彲鍋氱殑
         }
     }
     Double Neg(UnionOperand a){
@@ -333,7 +341,7 @@ public class Expression {
             throw e;
         }
         finally {
-            //没什么可做的
+            //娌′粈涔堝彲鍋氱殑
         }
     }
 }
