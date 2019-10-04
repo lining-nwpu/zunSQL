@@ -469,6 +469,9 @@ public class VirtualMachine {
 					}
 
 				}
+				
+				// 重新加入表头，以显示实际的列名，而不是"*"
+				result.addHeader((ArrayList<Column>) joinResult.getHeader()); // 从连接结果中获取表头，并且将其加入到最终的结果中，以显示
 				return;
 
 			}

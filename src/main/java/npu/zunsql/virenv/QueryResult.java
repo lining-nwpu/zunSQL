@@ -50,6 +50,16 @@ public class QueryResult
         return res;
     }
 
+    /**
+     * 向结果中添加表头
+     * @param _header 欲添加的表头
+     */
+    @SuppressWarnings("unchecked")
+	public void addHeader(ArrayList<Column> _header)
+    {
+    	header = (List<Column>) _header.clone();
+    }
+    
 //    public void setActivity(Activity type){
 //        this.type = type;
 //    }
