@@ -7,7 +7,7 @@ import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.sun.org.apache.bcel.internal.generic.I2F;
+//import com.sun.org.apache.bcel.internal.generic.I2F;
 
 import java.io.IOException;
 import java.io.ObjectInputStream;
@@ -32,13 +32,13 @@ public class Table implements TableReader, Serializable {
 //	protected int MM = -1;
 	protected int pageID = -1;
 
-	// page层的Mgr，用于对Page层进行操作。
+	// page灞傜殑Mgr锛岀敤浜庡Page灞傝繘琛屾搷浣溿��
 	public CacheMgr cacheManager;
 
 	private Page pageOne;
 
 	private boolean writeMyPage(Transaction myTran) {
-		// 写本页
+		// 鍐欐湰椤�
 		return cacheManager.writePage(myTran.tranNum, pageOne);
 	}
 
@@ -64,8 +64,8 @@ public class Table implements TableReader, Serializable {
 		// thisTran.Commit();
 	}
 
-	// 已有page，只需要加载其中的信息。
-	// 新建table的工作在database中已经完成，因此，可能加载出只有表头的空表。
+	// 宸叉湁page锛屽彧闇�瑕佸姞杞藉叾涓殑淇℃伅銆�
+	// 鏂板缓table鐨勫伐浣滃湪database涓凡缁忓畬鎴愶紝鍥犳锛屽彲鑳藉姞杞藉嚭鍙湁琛ㄥご鐨勭┖琛ㄣ��
 	protected Table(int pageID, CacheMgr cacheManager, Transaction thisTran)
 			throws IOException, ClassNotFoundException {
 		super();

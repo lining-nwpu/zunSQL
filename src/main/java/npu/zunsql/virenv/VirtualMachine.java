@@ -18,6 +18,10 @@ public class VirtualMachine {
 	private List<AttrInstance> record;
     //存储要创建表的各项表头，该数据结构仅用于创建表
 	private List<Column> columns;
+	//存储order by多列
+	private List<String> ordercol;
+	//记录order by是升序还是降序
+	private int orderflag = 0;
     //存储execute指令执行后的查询结构，仅select指令对应的操作会使得该集合非空
 	private QueryResult result;
     //要操作的对象表名
@@ -63,6 +67,7 @@ public class VirtualMachine {
 
 		filters = new ArrayList<>();
 		selectedColumns = new ArrayList<>();
+		ordercol = new ArrayList<>();
 		record = new ArrayList<>();
 		columns = new ArrayList<>();
 		updateAttrs = new ArrayList<>();
@@ -301,6 +306,21 @@ public class VirtualMachine {
 			singleUpdateValue.add(new EvalDiscription(OpCode.valueOf(p1), null, null));
 			break;
 
+		case Order:
+			ordercol.add(p1);
+			if(p2 == "desc")
+			{
+				orderflag = 2;
+			}
+			else
+			{
+				orderflag = 1;
+			}
+			break;
+
+		case Group:
+			break;
+
 		case Execute:
 			execute();
 			break;
@@ -327,6 +347,8 @@ public class VirtualMachine {
 		updateAttrs.clear();
 		updateValues.clear();
 		singleUpdateValue.clear();
+		ordercol.clear();
+		orderflag = 0;
 		activity = null;
 		targetTable = null;
 		joinResult = null;
@@ -338,6 +360,12 @@ public class VirtualMachine {
 		case Select:
 			select();
 			// ConditonClear();
+			//orderflag = 2;
+			//ordercol.add("score");
+			if(orderflag != 0)
+			{
+				orderby_sort();
+			}
 			isJoin = false;
 			break;
 		case Delete:
@@ -392,9 +420,6 @@ public class VirtualMachine {
 				headerType.add(BasicType.Integer);
 			}
 		}
-		// System.out.println("headerName size"+headerName.size());
-		// for(int i = 0 ; i < headerName.size();i++)
-		// System.out.println(headerName.get(i));
 		if (db.createTable(targetTable, pkName, headerName, headerType, tran) == null) {
             Util.log("创建表失败");
 		}
@@ -735,6 +760,56 @@ public class VirtualMachine {
 			cursor = db.getTable(tableName, tran).createCursor(tran);
 		}
 		joinResult = joinRes;
+	}
+	
+	private void orderby_sort() throws IOException, ClassNotFoundException{
+		List<Integer> temp_col = new ArrayList();
+		
+		for(int i = 0 ; i < ordercol.size() ; i ++)
+		{
+			String temp = ordercol.get(i);
+			for(int j = 0 ; j < result.getHeader().size() ; j ++)
+			{
+				if(result.getHeader().get(j).getColumnName().compareTo(temp) == 0)
+				{
+					temp_col.add(j);
+					break;
+				}
+			}
+		}
+		
+		Collections.sort(result.getRes() , new Comparator<List<String>>() {
+            @Override
+            public int compare(List<String> p1, List<String> p2) {
+            	for(int i = 0 ; i < temp_col.size() ; i ++)
+            	{
+            		if(p1.get(i).compareTo(p2.get(i)) > 0)
+            		{
+            			if(orderflag == 1)
+            			{
+            				return 1;
+            			}
+            			else
+            			{
+            				return -1;
+            			}
+            		}
+            		else if(p1.get(i).compareTo(p2.get(i)) < 0)
+            		{
+            			if(orderflag == 1)
+            			{
+            				return -1;
+            			}
+            			else
+            			{
+            				return 1;
+            			}
+            		}
+            	}
+                return 1;
+            }
+            
+        });
 	}
 
 	public JoinMatch checkUnion(List<Column> head1, List<Column> head2) {

@@ -39,7 +39,8 @@ public class App {
 		
 		//result = dbinstance.Execute("create table courseTable(courseName varchar primary key, courseNumber int)");
 
-		//result = dbinstance.Execute("insert into student (stuno, sname, score, course) values (2017005, 'zhang', 98.0+1, 'OS')");
+		result = dbinstance.Execute("insert into student (stuno, sname, score, course) values (2017005, 'zhang', 98.0+1, 'OS')");
+		//result = dbinstance.Execute("insert into student (stuno, sname, score, course) values (2016302, 'yang', 95, 'AS')");
 		//result = dbinstance.Execute("insert into student (stuno, sname, score, course) values (2017004, 'li', 80, 'DS')");		result = dbinstance.Execute("insert into student (stuno, name, score) values (2017004, 'li', 66)");
 		//result = dbinstance.Execute("insert into teacher(teano, tname ,Tcourse) values (2017004, 'jun',  'DS')");		
 		//result = dbinstance.Execute("insert into teacher(teano, tname ,Tcourse) values (2017006, 'zhang',  'c')");
@@ -56,7 +57,7 @@ public class App {
 		//result = dbinstance.Execute("select * from student where score>80 ");
 		//System.out.println("select * where name =zhang:   "+result.getRes());
 		//result = dbinstance.Execute("select stuno,score from student where stuno='2017004' and name ='li'");
-		
+		result = dbinstance.Execute("select stuno,score from student where score>80 ");
 		//result = dbinstance.Execute("begin transaction");
 		
 //		result = dbinstance.Execute("select sname,course,courseNumber from student,teacher,courseTable where sname=tname and course=courseName");

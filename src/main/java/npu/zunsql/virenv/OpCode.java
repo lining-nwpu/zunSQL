@@ -41,6 +41,7 @@ public enum OpCode{
     EndPK,
 
     Order,
+    Group,
     
     Operand,
     Operator,
