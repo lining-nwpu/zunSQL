@@ -487,13 +487,16 @@ public class VirtualMachine {
 		if (isJoin) {
 
 			if (selected.get(0).getColumnName().equals("*")) {
-				for (int indexi = 0; indexi < joinResult.getRes().size(); ++indexi) {
+				for (int indexi = 0; indexi < joinResult.getRes().size(); ++indexi) {					
 					if (check(indexi)) {
 						result.addRecord(joinResult.getRes().get(indexi));
 						result.addAffectedCount();
 					}
 
 				}
+				
+				// 重新加入表头，以显示实际的列名，而不是"*"
+				result.addHeader((ArrayList<Column>) joinResult.getHeader()); // 从连接结果中获取表头，并且将其加入到最终的结果中，以显示
 				return;
 
 			}
@@ -688,8 +691,16 @@ public class VirtualMachine {
 
 					for (int j = 0; j < infoJoin.size(); j++) {
 						if (infoJoin.get(j).equals(evalDiscriptions.get(i).col_name)) {
-							exp.addOperand(new UnionOperand(joinResult.getHeader().get(j).getColumnTypeBasic(),
-									joinResult.getRes().get(Index).get(j)));
+							if (!joinResult.getRes().get(Index).isEmpty())
+							{
+								exp.addOperand(new UnionOperand(joinResult.getHeader().get(j).getColumnTypeBasic(),
+										joinResult.getRes().get(Index).get(j)));
+							}
+							else
+							{
+								// 如果“自然连接表”为空，这里填写null，在后面的applyOperator方法中集中处理
+								exp.addOperand(null);
+							}
 						}
 					}
 
