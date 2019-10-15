@@ -42,6 +42,7 @@ public enum OpCode{
 
     Order,
     Group,
+    Sum,
     
     Operand,
     Operator,
