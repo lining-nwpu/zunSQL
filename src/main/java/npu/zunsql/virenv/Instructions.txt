@@ -49,6 +49,9 @@ BeginJoin
 AddTable                table_name
 EndJoin                 table_name
 
+Order                   col_name       asc/desc
+Group                   col_name 
+
 Execute                                                   
 ——————————————————————————————————————————————————————————————————————————
 

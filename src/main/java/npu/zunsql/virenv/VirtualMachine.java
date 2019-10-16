@@ -18,6 +18,14 @@ public class VirtualMachine {
 	private List<AttrInstance> record;
     //存储要创建表的各项表头，该数据结构仅用于创建表
 	private List<Column> columns;
+	//存储order by多列
+	private List<String> ordercol;
+	//记录order by是升序还是降序
+	private int orderflag = 0;
+	//记录groupby存储的列
+	private String groupcol; 
+	//记录要进行sum、的列
+	private String sumcol;
     //存储execute指令执行后的查询结构，仅select指令对应的操作会使得该集合非空
 	private QueryResult result;
     //要操作的对象表名
@@ -60,9 +68,12 @@ public class VirtualMachine {
 		activity = null;
 		targetTable = null;
 		joinResult = null;
+		groupcol = null;
+		sumcol = null;
 
 		filters = new ArrayList<>();
 		selectedColumns = new ArrayList<>();
+		ordercol = new ArrayList<>();
 		record = new ArrayList<>();
 		columns = new ArrayList<>();
 		updateAttrs = new ArrayList<>();
@@ -301,6 +312,26 @@ public class VirtualMachine {
 			singleUpdateValue.add(new EvalDiscription(OpCode.valueOf(p1), null, null));
 			break;
 
+		case Order:
+			ordercol.add(p1);
+			if(p2 == "desc")
+			{
+				orderflag = 2;
+			}
+			else
+			{
+				orderflag = 1;
+			}
+			break;
+
+		case Group:
+			groupcol = p1;
+			break;
+		
+		case Sum:
+			sumcol = p1;
+			break;
+			
 		case Execute:
 			execute();
 			break;
@@ -327,17 +358,30 @@ public class VirtualMachine {
 		updateAttrs.clear();
 		updateValues.clear();
 		singleUpdateValue.clear();
+		ordercol.clear();
+		orderflag = 0;
 		activity = null;
 		targetTable = null;
 		joinResult = null;
+		groupcol = null;
+		sumcol = null;
 	}
 
 	private void execute() throws IOException, ClassNotFoundException {
 		result = new QueryResult();
 		switch (activity) {
 		case Select:
+			//sumcol = "score";
+			//groupcol = "course";
 			select();
 			// ConditonClear();
+			//orderflag = 2;
+			//ordercol.add("score");
+			aggregate();
+			if(orderflag != 0)
+			{
+				orderby_sort(ordercol , orderflag , result);
+			}
 			isJoin = false;
 			break;
 		case Delete:
@@ -392,9 +436,6 @@ public class VirtualMachine {
 				headerType.add(BasicType.Integer);
 			}
 		}
-		// System.out.println("headerName size"+headerName.size());
-		// for(int i = 0 ; i < headerName.size();i++)
-		// System.out.println(headerName.get(i));
 		if (db.createTable(targetTable, pkName, headerName, headerType, tran) == null) {
             Util.log("创建表失败");
 		}
@@ -457,6 +498,14 @@ public class VirtualMachine {
             Column col = new Column(colName);
             selected.add(col);
         }
+        
+        //若使用聚集函数，需要加上新列
+        if (sumcol != null)
+        {
+        	Column col = new Column("SUM(" + sumcol + ")");
+        	selected.add(col);
+        }
+        
         result = new QueryResult(selected);
 
 		if (isJoin) {
@@ -746,6 +795,165 @@ public class VirtualMachine {
 			cursor = db.getTable(tableName, tran).createCursor(tran);
 		}
 		joinResult = joinRes;
+	}
+	
+	private void orderby_sort(List<String> ordercol1 , Integer orderflag1 , QueryResult list) throws IOException, ClassNotFoundException{
+		List<Integer> temp_col = new ArrayList<>();
+
+		for(int i = 0 ; i < ordercol1.size() ; i ++)
+		{
+			String temp = ordercol1.get(i);
+			for(int j = 0 ; j < list.getHeader().size() ; j ++)
+			{
+				if(list.getHeader().get(j).getColumnName().compareTo(temp) == 0)
+				{
+					temp_col.add(j);
+					break;
+				}
+			}
+		}
+		
+		Collections.sort(list.getRes() , new Comparator<List<String>>() {
+            @Override
+            public int compare(List<String> p1, List<String> p2) {
+            	for(int i = 0 ; i < temp_col.size() ; i ++)
+            	{
+            		int j = temp_col.get(i);
+            		if(p1.get(j).compareTo(p2.get(j)) > 0)
+            		{
+            			if(orderflag1 == 1)
+            			{
+            				return 1;
+            			}
+            			else
+            			{
+            				return -1;
+            			}
+            		}
+            		else if(p1.get(j).compareTo(p2.get(j)) < 0)
+            		{
+            			if(orderflag1 == 1)
+            			{
+            				return -1;
+            			}
+            			else
+            			{
+            				return 1;
+            			}
+            		}
+            	}
+                return 1;
+            }
+            
+        });
+	}
+	
+	private void aggregate() throws IOException, ClassNotFoundException{
+		if(sumcol != null)
+		{
+			if(groupcol == null)
+			{
+				double sum = 0 ;
+				int temp = -1;
+				//找到要进行sum操作的列
+				for(int i = 0 ; i < joinResult.getHeader().size() ; i ++)
+				{
+					if(joinResult.getHeader().get(i).getColumnName().equals(sumcol))
+					{
+						temp = i;
+						break;
+					}
+				}
+				//进行sum操作
+				for(int i = 0 ; i < joinResult.getRes().size() ; i ++)
+				{
+					if(check(i))
+					{
+						sum += Double.parseDouble(joinResult.getRes().get(i).get(temp));
+					}
+				}
+				//删除result中原有元素
+				result.getRes().clear();
+				//加入sum结果行
+				List<String> ansRecord = new ArrayList<>();
+				ansRecord.add(String.valueOf(sum));
+				result.addRecord(ansRecord);
+			}
+			else
+			{
+				int temp1 = -1 , temp2 = -1 , count = 0;
+				//找到要进行sum操作的列
+				for(int i = 0 ; i < joinResult.getHeader().size() ; i ++)
+				{
+					if(joinResult.getHeader().get(i).getColumnName().equals(sumcol))
+					{
+						temp1 = i;
+						break;
+					}
+				}
+				//找到要groupby的列
+				for(int i = 0 ; i < joinResult.getHeader().size() ; i ++)
+				{
+					if(joinResult.getHeader().get(i).getColumnName().equals(groupcol))
+					{
+						temp2 = i;
+						break;
+					}
+				}
+				//对joinResult以及result进行一次排序
+				List<String> tempcol = new ArrayList<>();
+				tempcol.add(groupcol);
+				orderby_sort(tempcol , 1 , joinResult);
+				orderby_sort(tempcol , 1 , result);
+				//计算sum
+				List<String> temprow = new ArrayList<>();
+				List<Double> sum = new ArrayList<>();
+				for(int i = 0 ; i < joinResult.getRes().size() ; i++)
+				{
+					if(check(i))
+					{
+						if(temprow.contains(joinResult.getRes().get(i).get(temp2)))
+						{
+							sum.set(sum.size() - 1 , sum.get(sum.size() - 1) + Double.parseDouble(joinResult.getRes().get(i).get(temp1)));		
+						}
+						else
+						{
+							temprow.add(joinResult.getRes().get(i).get(temp2));
+							sum.add(Double.parseDouble(joinResult.getRes().get(i).get(temp1)));
+						}
+					}
+				}
+				//找到group所在列
+				int flag = -1 ;
+				for(int i = 0 ; i < result.getHeader().size() ; i ++)
+				{
+					if(result.getHeader().get(i).getColumnName().equals(groupcol))
+					{
+						flag = i;
+					}
+				}
+				//回填sum，删除多余行
+				temprow.clear();
+				count = 0;
+				Iterator<List<String>> it = result.getRes().iterator();
+				while(it.hasNext())
+				{
+					List<String> templist = new ArrayList<>();
+					templist = it.next();
+					if(temprow.contains(templist.get(flag)))
+					{
+						it.remove();		
+					}
+					else
+					{
+						temprow.add(templist.get(flag));
+						templist.add(String.valueOf(sum.get(count)));
+						count += 1;
+					}
+				}
+				
+			}
+		}
 	}
 
 	public JoinMatch checkUnion(List<Column> head1, List<Column> head2) {

@@ -34,13 +34,22 @@ public class App {
 		QueryResult result;
 		
 		//result = dbinstance.Execute("begin transaction");
-		result = dbinstance.Execute("create table student(stuno int primary key, sname varchar,score double,course varchar)");
+		//result = dbinstance.Execute("create table student(stuno int primary key, sname varchar,score double,course varchar)");
 		//result = dbinstance.Execute("create table teacher(teano int primary key, tname varchar,Tcourse varchar)");
 		
 		//result = dbinstance.Execute("create table courseTable(courseName varchar primary key, courseNumber int)");
 
 		//result = dbinstance.Execute("insert into student (stuno, sname, score, course) values (2017005, 'zhang', 98.0+1, 'OS')");
-		//result = dbinstance.Execute("insert into student (stuno, sname, score, course) values (2017004, 'li', 80, 'DS')");		result = dbinstance.Execute("insert into student (stuno, name, score) values (2017004, 'li', 66)");
+		//result = dbinstance.Execute("insert into student (stuno, sname, score, course) values (2017006, 'zhao', 50, 'AS')");
+		//result = dbinstance.Execute("insert into student (stuno, sname, score, course) values (2017007, 'Qian', 85, 'OS')");
+		//result = dbinstance.Execute("insert into student (stuno, sname, score, course) values (2017008, 'Sun', 60, 'DS')");
+		//result = dbinstance.Execute("insert into student (stuno, sname, score, course) values (2017009, 'Wang', 55, 'OS')");
+		//result = dbinstance.Execute("insert into student (stuno, sname, score, course) values (2017010, 'Fan', 90, 'DS')");
+		//result = dbinstance.Execute("insert into student (stuno, sname, score, course) values (2017011, 'Yao', 70, 'OS')");
+		//result = dbinstance.Execute("insert into student (stuno, sname, score, course) values (2017012, 'Yi', 75, 'OS')");
+		//result = dbinstance.Execute("insert into student (stuno, sname, score, course) values (2016302, 'yang', 95, 'AS')");
+		//result = dbinstance.Execute("insert into student (stuno, sname, score, course) values (2017004, 'li', 80, 'DS')");		
+		//result = dbinstance.Execute("insert into student (stuno, name, score) values (2017004, 'li', 66)");
 		//result = dbinstance.Execute("insert into teacher(teano, tname ,Tcourse) values (2017004, 'jun',  'DS')");		
 		//result = dbinstance.Execute("insert into teacher(teano, tname ,Tcourse) values (2017006, 'zhang',  'c')");
 		//result = dbinstance.Execute("insert into courseTable(courseName,courseNumber) values ('OS',1024)");
@@ -54,9 +63,13 @@ public class App {
 		//result = dbinstance.Execute("update student set score=666 where stuno=2017005");
 		
 		//result = dbinstance.Execute("select * from student where score>80 ");
+		//result = dbinstance.Execute("select * from student");
+		result = dbinstance.Execute("select course,sum(score) from student");
+		//result = dbinstance.Execute("select * from student order by course , score");
+		//result = dbinstance.Execute("select * from student order by score");
 		//System.out.println("select * where name =zhang:   "+result.getRes());
 		//result = dbinstance.Execute("select stuno,score from student where stuno='2017004' and name ='li'");
-		
+		//result = dbinstance.Execute("select stuno,score from student where score>60 ");
 		//result = dbinstance.Execute("begin transaction");
 		
 //		result = dbinstance.Execute("select sname,course,courseNumber from student,teacher,courseTable where sname=tname and course=courseName");
@@ -85,7 +98,20 @@ public class App {
 //		result = dbinstance.Execute("rollback");
 //		
 //		result = dbinstance.Execute("select * from student");
+		for(int i = 0 ; i < result.getHeaderString().size() ; i ++)
+		{
+			System.out.printf("%s " , result.getHeaderString().get(i));
+		}
+		System.out.printf("\n");
 		
+		for(int i = 0 ; i < result.getRes().size() ; i ++)
+		{
+			for(int j = 0 ; j < result.getRes().get(i).size() ; j ++)
+			{
+				System.out.printf("%s " , result.getRes().get(i).get(j));
+			}
+			System.out.printf("\n");
+		}
 
    		dbinstance.Close();
 	}
