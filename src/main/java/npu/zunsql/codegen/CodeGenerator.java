@@ -165,7 +165,15 @@ public class CodeGenerator {
     	{
     		for (OrderBy.Item item : order_by.items)
     		{
-        		ret.add(new Instruction(OpCode.Order, item.by.toString(), null, null));
+    			if (item.ascending == false)
+    			{
+    				// 如果排序要求是降序排序的话，那么字节码的p2则为desc，反之则为asc
+    				ret.add(new Instruction(OpCode.Order, item.by.toString(), "desc", null));
+    			}
+    			else
+    			{
+    				ret.add(new Instruction(OpCode.Order, item.by.toString(), "asc", null));
+    			}
     		}
     	}
     	return ret;
