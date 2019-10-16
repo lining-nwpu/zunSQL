@@ -61,6 +61,7 @@ public class CodeGenerator {
                     ret.add(new Instruction(OpCode.Select, null, null, selectTableName.toString()));
                     ret.add(new Instruction(OpCode.BeginColSelect, null, null, null));
                     List<Expression> exprs = ((Select) statement).exprs;
+                    
                     for (Expression expr : exprs) {
                         if (expr instanceof WildcardExpression) {
                             ret.add(new Instruction(OpCode.AddColSelect, "*", null, null));
@@ -68,15 +69,24 @@ public class CodeGenerator {
                             String name = ((QualifiedNameExpression) expr).qname.names.get(0);
                             ret.add(new Instruction(OpCode.AddColSelect, name, null, null));
                         }
+                        else if (expr instanceof FunctionExpression)
+                        {
+                        	ret.addAll(FuncitonExpression2Instruction(expr));
+                        }
                         // Do not support other expression now due to lack of OpCode type.
                     }
                     ret.add(new Instruction(OpCode.EndColSelect, null, null, null));
                     Expression where = ((Select) statement).where;
                     ret.addAll(WhereToInstruction(where));
                     
+                    // 提取Group by 字段
+                    GroupBy group_by = ((Select) statement).groupBy;
+                    ret.addAll(groupBy2Instruction(group_by));
+                    
                     // 提取Orderby
                     OrderBy order_by = ((Select) statement).orderBy;
                     ret.addAll(orderBy2Instruction(order_by));
+                    
                     
                     break TYPE_SWITCH;
                 }
@@ -147,6 +157,39 @@ public class CodeGenerator {
         return ret;
     }
 
+    /**
+     * 将函数表达式转化为字节码指令
+     * @param ex 函数表达式
+     * @return 指令结果的数组
+     */
+    private static List<Instruction> FuncitonExpression2Instruction(Expression ex)
+    {
+    	String function_name = ((FunctionExpression)ex).function.names.get(0).toLowerCase();	// 获得函数的名称(默认全部是小写)
+    	
+    	List<Expression> args = ((FunctionExpression)ex).args;	// 获得参数的数组
+    	
+    	ArrayList<Instruction> ret = new ArrayList<Instruction>();	// 返回的指令结果
+    	
+    	// 查询函数名称，将之转化为字节码指令
+    	switch (function_name)
+    	{
+    	case "sum" : 
+    		{
+    			if (args.size() == 1)
+    			{
+    				// 其他情况不做处理（即sum函数的参数个数不为1）
+    				ret.add(new Instruction(OpCode.Sum, args.get(0).toString(), null, null));	// 对于sum()函数来说，默认只有一个参数
+    			}
+    			break;
+    		}
+    		
+    	default:
+    		break;
+    	}
+    	
+    	return ret;	// 返回结果
+    }
+    
     private static List<Instruction> ExpressionToInstruction(Expression exp) {
         List<Instruction> ret = new ArrayList<>();
         if (exp != null) {
@@ -157,6 +200,20 @@ public class CodeGenerator {
         return ret;
     }
 
+    private static List<Instruction> groupBy2Instruction(GroupBy group_by)
+    {
+    	List<Instruction> ret = new ArrayList<>();
+    	
+    	if (group_by != null)
+    	{
+    		for (Expression ex : group_by.by)
+    		{
+    			ret.add(new Instruction(OpCode.Group, ex.toString(), null, null));
+    		}
+    	}
+    	return ret;
+    }
+    
     private static List<Instruction> orderBy2Instruction(OrderBy order_by)
     {
     	List<Instruction> ret = new ArrayList<>();
@@ -165,7 +222,15 @@ public class CodeGenerator {
     	{
     		for (OrderBy.Item item : order_by.items)
     		{
-        		ret.add(new Instruction(OpCode.Order, item.by.toString(), null, null));
+    			if (item.ascending == false)
+    			{
+    				// 如果排序要求是降序排序的话，那么字节码的p2则为desc，反之则为asc
+    				ret.add(new Instruction(OpCode.Order, item.by.toString(), "desc", null));
+    			}
+    			else
+    			{
+    				ret.add(new Instruction(OpCode.Order, item.by.toString(), "asc", null));
+    			}
     		}
     	}
     	return ret;
