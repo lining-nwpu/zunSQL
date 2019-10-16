@@ -371,8 +371,8 @@ public class VirtualMachine {
 		result = new QueryResult();
 		switch (activity) {
 		case Select:
-			sumcol = "score";
-			groupcol.add("course");
+			//sumcol = "score";
+			//groupcol.add("course");
 			select();
 			// ConditonClear();
 			//orderflag = 2;
