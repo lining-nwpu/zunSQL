@@ -23,7 +23,7 @@ public class VirtualMachine {
 	//记录order by是升序还是降序
 	private int orderflag = 0;
 	//记录groupby存储的列
-	private String groupcol; 
+	private List<String> groupcol; 
 	//记录要进行sum、的列
 	private String sumcol;
     //存储execute指令执行后的查询结构，仅select指令对应的操作会使得该集合非空
@@ -68,7 +68,6 @@ public class VirtualMachine {
 		activity = null;
 		targetTable = null;
 		joinResult = null;
-		groupcol = null;
 		sumcol = null;
 
 		filters = new ArrayList<>();
@@ -79,6 +78,7 @@ public class VirtualMachine {
 		updateAttrs = new ArrayList<>();
 		updateValues = new ArrayList<>();
 		singleUpdateValue = new ArrayList<>();
+		groupcol = new ArrayList<>();
 
 		pkName = null;
 		db = pdb;
@@ -325,7 +325,7 @@ public class VirtualMachine {
 			break;
 
 		case Group:
-			groupcol = p1;
+			groupcol.add(p1);
 			break;
 		
 		case Sum:
@@ -363,7 +363,7 @@ public class VirtualMachine {
 		activity = null;
 		targetTable = null;
 		joinResult = null;
-		groupcol = null;
+		groupcol.clear();
 		sumcol = null;
 	}
 
@@ -371,8 +371,8 @@ public class VirtualMachine {
 		result = new QueryResult();
 		switch (activity) {
 		case Select:
-			//sumcol = "score";
-			//groupcol = "course";
+			sumcol = "score";
+			groupcol.add("course");
 			select();
 			// ConditonClear();
 			//orderflag = 2;
@@ -851,7 +851,7 @@ public class VirtualMachine {
 	private void aggregate() throws IOException, ClassNotFoundException{
 		if(sumcol != null)
 		{
-			if(groupcol == null)
+			if(groupcol.isEmpty())
 			{
 				double sum = 0 ;
 				int temp = -1;
@@ -881,7 +881,8 @@ public class VirtualMachine {
 			}
 			else
 			{
-				int temp1 = -1 , temp2 = -1 , count = 0;
+				int temp1 = -1 , count = 0;
+				List<Integer> temp2 = new ArrayList<>();
 				//找到要进行sum操作的列
 				for(int i = 0 ; i < joinResult.getHeader().size() ; i ++)
 				{
@@ -892,64 +893,80 @@ public class VirtualMachine {
 					}
 				}
 				//找到要groupby的列
-				for(int i = 0 ; i < joinResult.getHeader().size() ; i ++)
+				for(int i = 0 ; i < groupcol.size(); i ++)
 				{
-					if(joinResult.getHeader().get(i).getColumnName().equals(groupcol))
+					for(int j = 0 ; j < joinResult.getHeader().size() ; j ++)
 					{
-						temp2 = i;
-						break;
+						if(joinResult.getHeader().get(j).getColumnName().equals(groupcol.get(i)))
+						{
+							temp2.add(j);
+							break;
+						}
 					}
 				}
 				//对joinResult以及result进行一次排序
-				List<String> tempcol = new ArrayList<>();
-				tempcol.add(groupcol);
-				orderby_sort(tempcol , 1 , joinResult);
-				orderby_sort(tempcol , 1 , result);
+				orderby_sort(groupcol , 1 , joinResult);
+				orderby_sort(groupcol , 1 , result);
 				//计算sum
+				int tempflag = 1;
 				List<String> temprow = new ArrayList<>();
 				List<Double> sum = new ArrayList<>();
-				for(int i = 0 ; i < joinResult.getRes().size() ; i++)
+				for(int i = 0 ; i < joinResult.getRes().size() ; i ++)
 				{
 					if(check(i))
 					{
-						if(temprow.contains(joinResult.getRes().get(i).get(temp2)))
+						String tempstring = "";
+						for(int j = 0 ; j < groupcol.size(); j ++)
+						{
+							tempstring += joinResult.getRes().get(i).get(temp2.get(j));
+						}
+
+						if(temprow.contains(tempstring))
 						{
 							sum.set(sum.size() - 1 , sum.get(sum.size() - 1) + Double.parseDouble(joinResult.getRes().get(i).get(temp1)));		
 						}
 						else
 						{
-							temprow.add(joinResult.getRes().get(i).get(temp2));
+							temprow.add(tempstring);
 							sum.add(Double.parseDouble(joinResult.getRes().get(i).get(temp1)));
 						}
 					}
 				}
 				//找到group所在列
-				int flag = -1 ;
+				List<Integer> flag = new ArrayList<>();
 				for(int i = 0 ; i < result.getHeader().size() ; i ++)
 				{
 					if(result.getHeader().get(i).getColumnName().equals(groupcol))
 					{
-						flag = i;
+						flag.add(i);
 					}
 				}
 				//回填sum，删除多余行
 				temprow.clear();
-				count = 0;
+				int sum_count = 0 , iter_count = 0;
 				Iterator<List<String>> it = result.getRes().iterator();
 				while(it.hasNext())
 				{
 					List<String> templist = new ArrayList<>();
 					templist = it.next();
-					if(temprow.contains(templist.get(flag)))
+					
+					String tempstring = "";
+					for(int j = 0 ; j < groupcol.size(); j ++)
+					{
+						tempstring += joinResult.getRes().get(iter_count).get(temp2.get(j));
+					}
+					
+					if(temprow.contains(tempstring))
 					{
 						it.remove();		
 					}
 					else
 					{
-						temprow.add(templist.get(flag));
-						templist.add(String.valueOf(sum.get(count)));
-						count += 1;
+						temprow.add(tempstring);
+						templist.add(String.valueOf(sum.get(sum_count)));
+						sum_count ++;
 					}
+					iter_count ++;
 				}
 				
 			}
