@@ -43,7 +43,7 @@ public class App {
 		//result = dbinstance.Execute("insert into student (stuno, sname, score, course) values (2017006, 'zhao', 50, 'AS')");
 		//result = dbinstance.Execute("insert into student (stuno, sname, score, course) values (2017007, 'Qian', 85, 'OS')");
 		//result = dbinstance.Execute("insert into student (stuno, sname, score, course) values (2017008, 'Sun', 60, 'DS')");
-		//result = dbinstance.Execute("insert into student (stuno, sname, score, course) values (2017009, 'Wang', 55, 'OS')");
+		//result = dbinstance.Execute("insert into student (stuno, sname, score, course) values (2017009, 'zhang', 55, 'OS')");
 		//result = dbinstance.Execute("insert into student (stuno, sname, score, course) values (2017010, 'Fan', 90, 'DS')");
 		//result = dbinstance.Execute("insert into student (stuno, sname, score, course) values (2017011, 'Yao', 70, 'OS')");
 		//result = dbinstance.Execute("insert into student (stuno, sname, score, course) values (2017012, 'Yi', 75, 'OS')");
@@ -64,9 +64,10 @@ public class App {
 		
 		//result = dbinstance.Execute("select * from student where score>80 ");
 		//result = dbinstance.Execute("select * from student");
-		result = dbinstance.Execute("select course,sum(score) from student");
-		//result = dbinstance.Execute("select * from student order by course , score");
-		//result = dbinstance.Execute("select * from student order by score");
+		//result = dbinstance.Execute("select course , sum(score) from student group by course");
+		//result = dbinstance.Execute("select course , sname , sum(score) from student group by course , sname");
+		//result = dbinstance.Execute("select course , sname from student order by course , sname");
+		//result = dbinstance.Execute("select * from student order by score desc");
 		//System.out.println("select * where name =zhang:   "+result.getRes());
 		//result = dbinstance.Execute("select stuno,score from student where stuno='2017004' and name ='li'");
 		//result = dbinstance.Execute("select stuno,score from student where score>60 ");

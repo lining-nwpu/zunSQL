@@ -373,15 +373,19 @@ public class VirtualMachine {
 		case Select:
 			//sumcol = "score";
 			//groupcol.add("course");
+			if(orderflag != 0)
+			{
+				orderby_sort(ordercol , orderflag , joinResult);
+			}
+			if(!groupcol.isEmpty())
+			{
+				orderby_sort(groupcol , 1 , joinResult);
+			}
 			select();
 			// ConditonClear();
 			//orderflag = 2;
 			//ordercol.add("score");
 			aggregate();
-			if(orderflag != 0)
-			{
-				orderby_sort(ordercol , orderflag , result);
-			}
 			isJoin = false;
 			break;
 		case Delete:
@@ -905,8 +909,8 @@ public class VirtualMachine {
 					}
 				}
 				//对joinResult以及result进行一次排序
-				orderby_sort(groupcol , 1 , joinResult);
-				orderby_sort(groupcol , 1 , result);
+				//orderby_sort(groupcol , 1 , joinResult);
+				//orderby_sort(groupcol , 1 , result);
 				//计算sum
 				int tempflag = 1;
 				List<String> temprow = new ArrayList<>();
@@ -949,7 +953,6 @@ public class VirtualMachine {
 				{
 					List<String> templist = new ArrayList<>();
 					templist = it.next();
-					
 					String tempstring = "";
 					for(int j = 0 ; j < groupcol.size(); j ++)
 					{
@@ -963,6 +966,7 @@ public class VirtualMachine {
 					else
 					{
 						temprow.add(tempstring);
+						//result.getRes().get(iter_count).add(sum.get(sum_count));
 						templist.add(String.valueOf(sum.get(sum_count)));
 						sum_count ++;
 					}
