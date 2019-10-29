@@ -99,20 +99,6 @@ public class App {
 //		result = dbinstance.Execute("rollback");
 //		
 //		result = dbinstance.Execute("select * from student");
-		for(int i = 0 ; i < result.getHeaderString().size() ; i ++)
-		{
-			System.out.printf("%s " , result.getHeaderString().get(i));
-		}
-		System.out.printf("\n");
-		
-		for(int i = 0 ; i < result.getRes().size() ; i ++)
-		{
-			for(int j = 0 ; j < result.getRes().get(i).size() ; j ++)
-			{
-				System.out.printf("%s " , result.getRes().get(i).get(j));
-			}
-			System.out.printf("\n");
-		}
 
    		dbinstance.Close();
 	}
